@@ -1,1 +1,23 @@
 
+{
+  "id": "./",
+  "name": "StudyFlow",
+  "short_name": "StudyFlow",
+  "description": "Organize suas tarefas, matérias e notas escolares.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b14",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "./studyflow.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+
