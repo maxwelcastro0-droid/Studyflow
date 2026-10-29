@@ -1,0 +1,600 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0b14">
+<title>StudyFlow - Organizador Escolar</title>
+
+<style>
+:root {
+  --bg:#0b0b14;
+  --card:#151522;
+  --border:#29293b;
+  --purple:#8b5cf6;
+  --text:#f4f3ff;
+  --muted:#a3a3b8;
+  --green:#34d399;
+  --red:#fb7185;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Arial,sans-serif;
+}
+header {
+  padding:24px 20px;
+  background:linear-gradient(135deg,#20183d,#0b0b14);
+  border-bottom:1px solid var(--border);
+}
+.logo {font-size:26px;font-weight:bold;color:#b9a1ff}
+header p {color:var(--muted);margin-bottom:0}
+nav {
+  display:flex;gap:8px;overflow-x:auto;padding:12px 16px;
+  background:#10101b;border-bottom:1px solid var(--border);
+}
+button {
+  border:0;border-radius:9px;padding:12px 15px;
+  font-weight:bold;cursor:pointer;background:var(--purple);
+  color:white;margin-top:10px;
+}
+nav button {margin:0;background:#222136;white-space:nowrap}
+nav button.active {background:var(--purple)}
+main {max-width:850px;margin:auto;padding:20px 16px 60px}
+h2 {font-size:22px}
+.card {
+  background:var(--card);border:1px solid var(--border);
+  border-radius:15px;padding:17px;margin-bottom:16px;
+}
+.stats {display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat {
+  background:#191829;padding:16px;border-radius:12px;
+  border:1px solid var(--border);color:var(--muted);
+}
+.stat strong {display:block;font-size:27px;color:#b9a1ff;margin-top:8px}
+label {display:block;color:var(--muted);font-size:14px;margin:13px 0 6px}
+input,select,textarea {
+  width:100%;padding:12px;border:1px solid var(--border);
+  border-radius:9px;background:#0f0f1b;color:var(--text);
+  font-size:15px;
+}
+.full {width:100%}
+.secondary {background:#29283c}
+.danger {background:#572332;color:#ffb5c3}
+.success {background:#153d35;color:#86efc5}
+.task,.subject,.unit {
+  border:1px solid var(--border);background:#11111d;
+  border-radius:12px;padding:14px;margin-top:10px;
+}
+.task.done {opacity:.6}
+.task.done .task-title {text-decoration:line-through}
+.task-title {font-weight:bold;overflow-wrap:anywhere}
+.meta {color:var(--muted);font-size:13px;line-height:1.7;margin-top:8px}
+.actions {display:flex;flex-wrap:wrap;gap:6px}
+.actions button {font-size:12px;padding:9px}
+.badge {
+  display:inline-block;background:#30234d;color:#d2c1ff;
+  padding:5px 8px;border-radius:6px;font-size:12px;margin-top:8px;
+}
+.empty {color:var(--muted);text-align:center;padding:20px 0}
+.subject-button {
+  width:100%;text-align:left;background:#191829;
+  border:1px solid var(--border);padding:16px;margin:6px 0;
+}
+.subject-button span {display:block;color:var(--muted);font-size:13px;margin-top:7px}
+.score {
+  font-size:25px;font-weight:bold;color:#b9a1ff;margin-top:8px;
+}
+.back {background:#29283c;margin:0 0 15px}
+[hidden] {display:none!important}
+@media(min-width:600px) {
+  .stats {grid-template-columns:repeat(4,1fr)}
+  .unit-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">✦ StudyFlow</div>
+  <p>Organize sua vida escolar com inteligência.</p>
+</header>
+
+<nav>
+  <button class="active" data-page="inicio">⌂ Início</button>
+  <button data-page="tarefas">✓ Tarefas</button>
+  <button data-page="materias">▤ Matérias</button>
+  <button data-page="notas">★ Notas</button>
+</nav>
+
+<main>
+
+<section id="inicio" class="page">
+  <h2>Seu painel</h2>
+  <p id="today" class="meta"></p>
+
+  <div class="stats">
+    <div class="stat">Pendentes<strong id="pendingCount">0</strong></div>
+    <div class="stat">Concluídas<strong id="doneCount">0</strong></div>
+    <div class="stat">Prazos futuros<strong id="upcomingCount">0</strong></div>
+    <div class="stat">Matérias<strong id="subjectCount">0</strong></div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Próximas atividades</h3>
+    <div id="homeTasks"></div>
+    <button class="full" onclick="showPage('tarefas')">Ver tarefas</button>
+  </div>
+
+  <div class="card">
+    <h3>Minhas médias</h3>
+    <div id="homeAverages"></div>
+    <button class="full" onclick="showPage('notas')">Acessar notas</button>
+  </div>
+</section>
+
+<section id="tarefas" class="page" hidden>
+  <h2>Trabalhos e tarefas</h2>
+
+  <div class="card">
+    <h3 id="taskFormTitle">Nova atividade</h3>
+    <form id="taskForm">
+      <input type="hidden" id="taskId">
+
+      <label for="taskName">Nome da atividade</label>
+      <input id="taskName" required maxlength="120"
+        placeholder="Ex.: Trabalho de Ciências">
+
+      <label for="taskSubject">Matéria</label>
+      <select id="taskSubject">
+        <option value="">Sem matéria específica</option>
+      </select>
+
+      <label for="taskType">Tipo</label>
+      <select id="taskType">
+        <option>Trabalho</option>
+        <option>Atividade</option>
+        <option>Prova</option>
+        <option>Apresentação</option>
+        <option>Estudo</option>
+        <option>Outro</option>
+      </select>
+
+      <label for="taskDate">Prazo de entrega</label>
+      <input id="taskDate" type="date" required>
+
+      <label for="taskPriority">Prioridade</label>
+      <select id="taskPriority">
+        <option>Normal</option>
+        <option>Alta</option>
+        <option>Urgente</option>
+      </select>
+
+      <label for="taskDescription">Descrição</label>
+      <textarea id="taskDescription" rows="3"
+        placeholder="O que precisa ser feito?"></textarea>
+
+      <button class="full" type="submit">Salvar atividade</button>
+      <button class="secondary full" type="button"
+        onclick="resetTaskForm()">Cancelar edição</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Minhas atividades</h3>
+    <label for="taskFilter">Filtrar atividades</label>
+    <select id="taskFilter">
+      <option value="all">Todas</option>
+      <option value="pending">Pendentes</option>
+      <option value="done">Concluídas</option>
+    </select>
+    <div id="taskList"></div>
+  </div>
+</section>
+
+<section id="materias" class="page" hidden>
+  <h2>Minhas matérias</h2>
+  <div class="card">
+    <form id="subjectForm">
+      <label for="subjectName">Nome da matéria</label>
+      <input id="subjectName" required maxlength="70"
+        placeholder="Ex.: Matemática">
+      <button class="full" type="submit">Adicionar matéria</button>
+    </form>
+  </div>
+  <div id="subjectList"></div>
+</section>
+
+<section id="notas" class="page" hidden>
+  <h2>Notas por unidade</h2>
+  <p class="meta">
+    Selecione uma matéria para registrar suas notas da 1ª, 2ª e 3ª unidade.
+  </p>
+  <div id="gradeSubjectList"></div>
+  <div id="gradeDetails" hidden></div>
+</section>
+
+</main>
+
+<script>
+const STORAGE_KEY = "studyflow_data_v2";
+
+function loadData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && Array.isArray(saved.tasks) &&
+        Array.isArray(saved.subjects)) {
+      return {
+        tasks:saved.tasks,
+        subjects:saved.subjects,
+        grades:saved.grades || {}
+      };
+    }
+  } catch(e) {}
+  return {tasks:[],subjects:[],grades:{}};
+}
+
+let data = loadData();
+let selectedGradeSubject = null;
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+  } catch(e) {
+    alert("Não foi possível salvar. Verifique o armazenamento do navegador.");
+  }
+}
+
+function uid() {
+  return Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function todayISO() {
+  const d=new Date();
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000)
+    .toISOString().slice(0,10);
+}
+
+function fmtDate(value) {
+  if(!value) return "Sem data";
+  const p=value.split("-");
+  return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : value;
+}
+
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(s=>{
+    s.hidden=s.id!==page;
+  });
+  document.querySelectorAll("nav button").forEach(b=>{
+    b.classList.toggle("active",b.dataset.page===page);
+  });
+  renderAll();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+document.querySelectorAll("nav button").forEach(b=>{
+  b.addEventListener("click",()=>showPage(b.dataset.page));
+});
+
+function subjectName(id) {
+  return data.subjects.find(s=>s.id===id)?.name || "Sem matéria";
+}
+
+function renderSubjectOptions() {
+  const select=document.getElementById("taskSubject");
+  const old=select.value;
+  select.innerHTML='<option value="">Sem matéria específica</option>'+
+    data.subjects.map(s=>
+      `<option value="${esc(s.id)}">${esc(s.name)}</option>`
+    ).join("");
+  if(data.subjects.some(s=>s.id===old)) select.value=old;
+}
+
+document.getElementById("taskForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const id=document.getElementById("taskId").value;
+  const old=data.tasks.find(t=>t.id===id);
+
+  const task={
+    id:id||uid(),
+    name:document.getElementById("taskName").value.trim(),
+    subjectId:document.getElementById("taskSubject").value,
+    type:document.getElementById("taskType").value,
+    date:document.getElementById("taskDate").value,
+    priority:document.getElementById("taskPriority").value,
+    description:document.getElementById("taskDescription").value.trim(),
+    done:old ? old.done : false
+  };
+
+  if(!task.name||!task.date) return;
+
+  if(id) data.tasks=data.tasks.map(t=>t.id===id?task:t);
+  else data.tasks.push(task);
+
+  saveData();
+  resetTaskForm();
+  renderAll();
+  alert("Atividade salva!");
+});
+
+function resetTaskForm() {
+  document.getElementById("taskForm").reset();
+  document.getElementById("taskId").value="";
+  document.getElementById("taskFormTitle").textContent="Nova atividade";
+}
+
+function editTask(id) {
+  const t=data.tasks.find(t=>t.id===id);
+  if(!t) return;
+  document.getElementById("taskId").value=t.id;
+  document.getElementById("taskName").value=t.name;
+  document.getElementById("taskSubject").value=t.subjectId||"";
+  document.getElementById("taskType").value=t.type;
+  document.getElementById("taskDate").value=t.date;
+  document.getElementById("taskPriority").value=t.priority;
+  document.getElementById("taskDescription").value=t.description||"";
+  document.getElementById("taskFormTitle").textContent="Editar atividade";
+  showPage("tarefas");
+  document.getElementById("taskName").focus();
+}
+
+function toggleTask(id) {
+  const t=data.tasks.find(t=>t.id===id);
+  if(!t) return;
+  t.done=!t.done;
+  saveData();
+  renderAll();
+}
+
+function deleteTask(id) {
+  if(!confirm("Deseja excluir esta atividade?")) return;
+  data.tasks=data.tasks.filter(t=>t.id!==id);
+  saveData();
+  renderAll();
+}
+
+function taskHTML(t) {
+  const overdue=!t.done&&t.date<todayISO();
+  return `<div class="task ${t.done?"done":""}">
+    <div class="task-title">${esc(t.name)}</div>
+    <span class="badge">${esc(t.type)}</span>
+    <div class="meta">
+      Matéria: ${esc(subjectName(t.subjectId))}<br>
+      Prazo: ${fmtDate(t.date)}<br>
+      Prioridade: ${esc(t.priority)}
+      ${overdue?'<br><span style="color:#fb7185">Prazo vencido</span>':""}
+      ${t.description?"<br>"+esc(t.description):""}
+    </div>
+    <div class="actions">
+      <button class="success" onclick="toggleTask('${t.id}')">
+        ${t.done?"Reabrir":"Concluir"}
+      </button>
+      <button class="secondary" onclick="editTask('${t.id}')">Editar</button>
+      <button class="danger" onclick="deleteTask('${t.id}')">Excluir</button>
+    </div>
+  </div>`;
+}
+
+function renderTasks() {
+  const filter=document.getElementById("taskFilter").value;
+  let tasks=[...data.tasks].sort((a,b)=>a.date.localeCompare(b.date));
+  if(filter==="pending") tasks=tasks.filter(t=>!t.done);
+  if(filter==="done") tasks=tasks.filter(t=>t.done);
+
+  document.getElementById("taskList").innerHTML=tasks.length
+    ?tasks.map(taskHTML).join("")
+    :'<p class="empty">Nenhuma atividade encontrada.</p>';
+
+  const upcoming=data.tasks.filter(t=>!t.done&&t.date>=todayISO())
+    .sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+
+  document.getElementById("homeTasks").innerHTML=upcoming.length
+    ?upcoming.map(taskHTML).join("")
+    :'<p class="empty">Nenhum prazo futuro pendente.</p>';
+}
+
+document.getElementById("taskFilter").addEventListener("change",renderTasks);
+
+document.getElementById("subjectForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=document.getElementById("subjectName").value.trim();
+  if(!name) return;
+
+  if(data.subjects.some(s=>s.name.toLowerCase()===name.toLowerCase())) {
+    alert("Essa matéria já está cadastrada.");
+    return;
+  }
+
+  const subject={id:uid(),name};
+  data.subjects.push(subject);
+  data.grades[subject.id]={units:["","",""]};
+  saveData();
+  e.target.reset();
+  renderAll();
+});
+
+function deleteSubject(id) {
+  const used=data.tasks.some(t=>t.subjectId===id);
+  if(!confirm(used
+    ?"A matéria será excluída. As tarefas relacionadas permanecerão sem matéria. Continuar?"
+    :"Deseja excluir esta matéria?")) return;
+
+  data.subjects=data.subjects.filter(s=>s.id!==id);
+  delete data.grades[id];
+  if(selectedGradeSubject===id) selectedGradeSubject=null;
+  saveData();
+  renderAll();
+}
+
+function renderSubjects() {
+  document.getElementById("subjectList").innerHTML=data.subjects.length
+    ?data.subjects.map(s=>`
+      <div class="card">
+        <strong>📘 ${esc(s.name)}</strong>
+        <div class="meta">
+          ${data.tasks.filter(t=>t.subjectId===s.id&&!t.done).length}
+          tarefa(s) pendente(s)
+        </div>
+        <button onclick="openGrades('${s.id}')">Ver notas</button>
+        <button class="danger" onclick="deleteSubject('${s.id}')">Excluir</button>
+      </div>`).join("")
+    :'<p class="empty">Cadastre sua primeira matéria.</p>';
+}
+
+function ensureGrades(id) {
+  if(!data.grades[id]) data.grades[id]={units:["","",""]};
+  if(!Array.isArray(data.grades[id].units))
+    data.grades[id].units=["","",""];
+  while(data.grades[id].units.length<3)
+    data.grades[id].units.push("");
+  return data.grades[id];
+}
+
+function unitAverage(id) {
+  const units=ensureGrades(id).units;
+  const values=units.filter(v=>v!==""&&v!==null&&Number.isFinite(Number(v)))
+    .map(Number);
+  if(!values.length) return null;
+  return values.reduce((a,b)=>a+b,0)/values.length;
+}
+
+function averageText(id) {
+  const avg=unitAverage(id);
+  return avg===null?"Sem notas":avg.toFixed(2).replace(".",",");
+}
+
+function openGrades(id) {
+  selectedGradeSubject=id;
+  showPage("notas");
+  renderGradeDetails();
+  document.getElementById("gradeDetails").scrollIntoView({behavior:"smooth"});
+}
+
+function renderGradeDetails() {
+  const box=document.getElementById("gradeDetails");
+  const subject=data.subjects.find(s=>s.id===selectedGradeSubject);
+
+  if(!subject) {
+    box.hidden=true;
+    return;
+  }
+
+  box.hidden=false;
+  const units=ensureGrades(subject.id).units;
+  const names=["1ª unidade","2ª unidade","3ª unidade"];
+
+  box.innerHTML=`
+    <button class="back" onclick="closeGrades()">← Voltar às matérias</button>
+    <div class="card">
+      <h2>${esc(subject.name)}</h2>
+      <p class="meta">Registre uma nota de 0 a 10 para cada unidade.</p>
+
+      <div class="unit-grid">
+        ${names.map((name,i)=>`
+          <div class="unit">
+            <strong>${name}</strong>
+            <label for="unit${i}">Nota da unidade</label>
+            <input id="unit${i}" type="number" min="0" max="10"
+              step="0.1" inputmode="decimal"
+              value="${units[i]??""}" placeholder="0 a 10">
+          </div>`).join("")}
+      </div>
+
+      <button class="full" onclick="saveUnitGrades('${subject.id}')">
+        Salvar notas
+      </button>
+
+      <div class="card" style="margin-top:18px;margin-bottom:0">
+        <div class="meta">Média das unidades com nota registrada</div>
+        <div class="score" id="detailAverage">${averageText(subject.id)}</div>
+        <div class="meta">
+          ${units.filter(v=>v!==""&&v!==null&&Number.isFinite(Number(v))).length}
+          de 3 unidades registradas
+        </div>
+      </div>
+    </div>`;
+}
+
+function saveUnitGrades(id) {
+  const values=[0,1,2].map(i=>
+    document.getElementById("unit"+i).value.trim()
+  );
+
+  for(const value of values) {
+    if(value!==""&&(!Number.isFinite(Number(value))||
+       Number(value)<0||Number(value)>10)) {
+      alert("As notas devem estar entre 0 e 10.");
+      return;
+    }
+  }
+
+  data.grades[id]={units:values};
+  saveData();
+  renderAll();
+  renderGradeDetails();
+  alert("Notas salvas com sucesso!");
+}
+
+function closeGrades() {
+  selectedGradeSubject=null;
+  renderGradeDetails();
+  renderGradeSubjects();
+}
+
+function renderGradeSubjects() {
+  const box=document.getElementById("gradeSubjectList");
+
+  if(!data.subjects.length) {
+    box.innerHTML='<div class="card"><p class="empty">Cadastre uma matéria primeiro para registrar suas notas.</p><button class="full" onclick="showPage(\'materias\')">Cadastrar matéria</button></div>';
+    return;
+  }
+
+  box.innerHTML=data.subjects.map(s=>`
+    <button class="subject-button" onclick="openGrades('${s.id}')">
+      📘 ${esc(s.name)}
+      <span>Média atual: ${averageText(s.id)} · Toque para acessar as unidades</span>
+    </button>`).join("");
+}
+
+function renderHome() {
+  document.getElementById("today").textContent=new Date().toLocaleDateString(
+    "pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}
+  );
+  document.getElementById("pendingCount").textContent=
+    data.tasks.filter(t=>!t.done).length;
+  document.getElementById("doneCount").textContent=
+    data.tasks.filter(t=>t.done).length;
+  document.getElementById("upcomingCount").textContent=
+    data.tasks.filter(t=>!t.done&&t.date>=todayISO()).length;
+  document.getElementById("subjectCount").textContent=data.subjects.length;
+
+  document.getElementById("homeAverages").innerHTML=data.subjects.length
+    ?data.subjects.map(s=>`
+      <div class="task">
+        <strong>${esc(s.name)}</strong>
+        <div class="meta">Média atual: ${averageText(s.id)}</div>
+        <button onclick="openGrades('${s.id}')">Acessar unidades</button>
+      </div>`).join("")
+    :'<p class="empty">Adicione matérias para acompanhar suas médias.</p>';
+}
+
+function renderAll() {
+  renderSubjectOptions();
+  renderHome();
+  renderTasks();
+  renderSubjects();
+  renderGradeSubjects();
+  renderGradeDetails();
+}
+
+renderAll();
+</script>
+</body>
+</html>
